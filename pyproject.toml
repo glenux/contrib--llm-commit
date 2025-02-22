@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-commit"
-version = "0.1.2"
+version = "1.0.0"
 description = "A plugin for llm that generates commit messages"
 authors = [
     { name = "Grigoris Ntousakis", email = "greco1996@gmail.com" }
