@@ -1,0 +1,44 @@
+# Python compiled files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# OS-specific files
+.DS_Store
+
+# Logs, caches, and build artifacts
+*.log
+*.out
+*.pid
+*.swp
+*.cache
+.pytest_cache/
+.coverage
+.tox/
+.nox/
+.mypy_cache/
+pip-wheel-metadata/
+dist/
+build/
+*.egg-info/
+MANIFEST
+
+# IDE/editor files
+.vscode/
+.idea/
+
+# Dependency and environment files
+Pipfile*
+poetry.lock
+*.env
+.envrc
+.env.local
+.env.development
+.env.production
+
+# Sensitive configuration
+.llm-commit-config

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-commit"
+version = "0.1.2"
+description = "A plugin for llm that generates commit messages"
+authors = [
+    { name = "Grigoris Ntousakis", email = "greco1996@gmail.com" }
+]
+dependencies = [
+    "click",
+    "llm"
+]
+
+# The 'llm' entry-point tells the 'llm' CLI where to find your plugin code.
+[project.entry-points."llm"]
+commit = "llm_commit"
+
+[project.optional-dependencies]
+test = ["pytest"]
