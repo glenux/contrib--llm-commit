@@ -196,3 +196,22 @@ def test_commit_cmd_not_git_repo(monkeypatch, caplog):
     result = runner.invoke(cli, ["commit"])
     assert result.exit_code == 1
     assert "Not a Git repository" in caplog.text
+
+def test_generate_commit_message_triple_backticks_removal(monkeypatch):
+    # Dummy response that returns a commit message wrapped in triple backticks.
+    class DummyResponseWithBackticks:
+        def text(self):
+            return "```\nSummary\n- Change 1\n- Change 2\n```"
+    class DummyModelWithBackticks:
+        needs_key = False
+        def prompt(self, prompt, system, max_tokens, temperature):
+            return DummyResponseWithBackticks()
+
+    # Monkey-patch the llm.get_model to return our dummy model.
+    monkeypatch.setattr(llm_commit.llm, "get_model", lambda model: DummyModelWithBackticks())
+    
+    # Call the function to generate the commit message.
+    message = llm_commit.generate_commit_message("diff text")
+    
+    assert "```" not in message
+    assert "Summary" in message

@@ -39,7 +39,7 @@ def generate_commit_message(diff, model="gpt-3.5-turbo", max_tokens=100, tempera
     import llm
     from llm.cli import get_default_model
     from llm import get_key
-    # ... rest of the function
+
     prompt = (
         "Generate a concise and professional Git commit message based on the following diff. "
         "The commit message should include a one-line summary at the top, followed by bullet points "
@@ -54,7 +54,7 @@ def generate_commit_message(diff, model="gpt-3.5-turbo", max_tokens=100, tempera
         max_tokens=max_tokens,
         temperature=temperature
     )
-    return response.text().strip()
+    return clean_message(response)
 
 def commit_changes(message):
     try:
@@ -77,12 +77,19 @@ def confirm_commit(message, auto_yes=False):
             return False
         click.echo("Please enter 'yes' or 'no'.")
 
+def clean_message(message):
+    message = message.text().strip()
+    # Remove triple backticks at the beginning and end, if present
+    if message.startswith("```") and message.endswith("```"):
+        message = message[3:-3].strip()
+    return message
+
 @llm.hookimpl
 def register_commands(cli):
     import llm
     from llm.cli import get_default_model
     from llm import get_key
-    # ... rest of the function
+
     @cli.command(name="commit")
     @click.option("-y", "--yes", is_flag=True, help="Commit without prompting")
     @click.option("--model", default="gpt-3.5-turbo", help="LLM model to use")
