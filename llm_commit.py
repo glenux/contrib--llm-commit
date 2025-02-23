@@ -96,7 +96,7 @@ def register_commands(cli):
     @click.option("--max-tokens", type=int, default=100, help="Max tokens")
     @click.option("--temperature", type=float, default=0.3, help="Temperature")
     @click.option("--truncation-limit", type=int, default=4000, help="Character limit for diff truncation")
-    @click.option("--no-truncation", is_flag=True, help="Disable diff truncation. Can cause issues with large diffs.")
+    @click.option("--no-truncation", is_flag=True, help="Disable diff truncation. Can cause issues with large diffs")
     def commit_cmd(yes, model, max_tokens, temperature, truncation_limit, no_truncation):
         if not is_git_repo():
             logging.error("Not a Git repository.")
