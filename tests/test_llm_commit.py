@@ -65,10 +65,19 @@ def test_get_staged_diff_truncation(monkeypatch, caplog):
     caplog.set_level(logging.WARNING)
     long_diff = "a" * 5000
     monkeypatch.setattr(llm_commit, "run_git", lambda cmd: long_diff)
+    
+    # Test default truncation
     diff = llm_commit.get_staged_diff()
     expected = "a" * 4000 + "\n[Truncated]"
     assert diff == expected
     assert "Diff is large" in caplog.text
+    
+    # Test custom truncation limit
+    caplog.clear()
+    diff = llm_commit.get_staged_diff(truncation_limit=2000)
+    expected = "a" * 2000 + "\n[Truncated]"
+    assert diff == expected
+    assert "truncating to 2000 characters" in caplog.text
 
 # --- generate_commit_message Tests ---
 class DummyResponse:
@@ -215,3 +224,15 @@ def test_generate_commit_message_triple_backticks_removal(monkeypatch):
     
     assert "```" not in message
     assert "Summary" in message
+
+def test_commit_cmd_custom_truncation(monkeypatch):
+    runner = CliRunner()
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    monkeypatch.setattr(llm_commit, "get_staged_diff", lambda truncation_limit=4000: f"diff text truncated at {truncation_limit}")
+    monkeypatch.setattr(llm_commit, "generate_commit_message", lambda *args, **kwargs: "Test message")
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda _: "yes")
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit", "--truncation-limit", "2000"])
+    assert result.exit_code == 0
+    assert "diff text truncated at 2000" in str(result.output)
