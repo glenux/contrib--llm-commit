@@ -79,6 +79,13 @@ def test_get_staged_diff_truncation(monkeypatch, caplog):
     assert diff == expected
     assert "truncating to 2000 characters" in caplog.text
 
+    # Test no truncation
+    caplog.clear()
+    diff = llm_commit.get_staged_diff(no_truncation=True)
+    expected = "a" * 5000
+    assert diff == expected
+    assert "truncating" not in caplog.text
+
 # --- generate_commit_message Tests ---
 class DummyResponse:
     def text(self):
@@ -236,3 +243,18 @@ def test_commit_cmd_custom_truncation(monkeypatch):
     result = runner.invoke(cli, ["commit", "--truncation-limit", "2000"])
     assert result.exit_code == 0
     assert "diff text truncated at 2000" in str(result.output)
+
+def test_commit_cmd_no_truncation(monkeypatch):
+    runner = CliRunner()
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    # Track if no_truncation was passed correctly
+    def mock_get_staged_diff(truncation_limit=4000, no_truncation=False):
+        return f"diff text {'not ' if no_truncation else ''}truncated"
+    monkeypatch.setattr(llm_commit, "get_staged_diff", mock_get_staged_diff)
+    monkeypatch.setattr(llm_commit, "generate_commit_message", lambda *args, **kwargs: "Test message")
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda _: "yes")
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit", "--no-truncation"])
+    assert result.exit_code == 0
+    assert "diff text not truncated" in str(result.output)

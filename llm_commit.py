@@ -25,12 +25,12 @@ def is_git_repo():
     except subprocess.CalledProcessError:
         return False
 
-def get_staged_diff(truncation_limit=4000):
+def get_staged_diff(truncation_limit=4000, no_truncation=False):
     diff = run_git(["git", "diff", "--cached"])
     if not diff:
         logging.error("No staged changes. Use 'git add'.")
         sys.exit(1)
-    if len(diff) > truncation_limit:
+    if not no_truncation and len(diff) > truncation_limit:
         logging.warning(f"Diff is large; truncating to {truncation_limit} characters.")
         diff = diff[:truncation_limit] + "\n[Truncated]"
     return diff
@@ -96,11 +96,12 @@ def register_commands(cli):
     @click.option("--max-tokens", type=int, default=100, help="Max tokens")
     @click.option("--temperature", type=float, default=0.3, help="Temperature")
     @click.option("--truncation-limit", type=int, default=4000, help="Character limit for diff truncation")
-    def commit_cmd(yes, model, max_tokens, temperature, truncation_limit):
+    @click.option("--no-truncation", is_flag=True, help="Disable diff truncation. Can cause issues with large diffs.")
+    def commit_cmd(yes, model, max_tokens, temperature, truncation_limit, no_truncation):
         if not is_git_repo():
             logging.error("Not a Git repository.")
             sys.exit(1)
-        diff = get_staged_diff(truncation_limit=truncation_limit)
+        diff = get_staged_diff(truncation_limit=truncation_limit, no_truncation=no_truncation)
         message = generate_commit_message(diff, model=model, max_tokens=max_tokens, temperature=temperature)
         if confirm_commit(message, auto_yes=yes):
             commit_changes(message)
