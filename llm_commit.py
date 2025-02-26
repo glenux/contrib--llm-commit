@@ -35,7 +35,7 @@ def get_staged_diff(truncation_limit=4000, no_truncation=False):
         diff = diff[:truncation_limit] + "\n[Truncated]"
     return diff
 
-def generate_commit_message(diff, model="gpt-3.5-turbo", max_tokens=100, temperature=0.7):
+def generate_commit_message(diff, model=None, max_tokens=100, temperature=0.7):
     import llm
     from llm.cli import get_default_model
     from llm import get_key
@@ -92,7 +92,7 @@ def register_commands(cli):
 
     @cli.command(name="commit")
     @click.option("-y", "--yes", is_flag=True, help="Commit without prompting")
-    @click.option("--model", default="gpt-3.5-turbo", help="LLM model to use")
+    @click.option("--model", help="LLM model to use")
     @click.option("--max-tokens", type=int, default=100, help="Max tokens")
     @click.option("--temperature", type=float, default=0.3, help="Temperature")
     @click.option("--truncation-limit", type=int, default=4000, help="Character limit for diff truncation")
