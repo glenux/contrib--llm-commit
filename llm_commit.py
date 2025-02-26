@@ -44,7 +44,6 @@ def generate_commit_message(diff, commit_style=None, model=None, max_tokens=100,
         style_description = (
             "Generate a Git commit message following the Semantic Commit "
             "Messages format: <type>[optional scope in parentheses]: <subject>.\n"
-            "Ensure the subject is in present tense and concise."
         )
     elif commit_style == "conventional":
         style_description = (
@@ -61,7 +60,15 @@ def generate_commit_message(diff, commit_style=None, model=None, max_tokens=100,
         )
 
     prompt = (
-        f"{style_description}\n\nDiff:\n{diff}"
+        f"<commit-style>\n{style_description}\n</commit-style>\n"
+        f"<diff>\n{diff}\n</diff>\n"
+        f"<request>\nGenerate a Git commit title and commit message based on the above diff, following the specified commit style.\n</request>\n"
+        f"<constraints>\n"
+        f"* Use the {commit_style.capitalize()} Commit Messages format.\n"
+        f"* Ensure the commit message is concise and follows professional standards.\n"
+        f"* Ensure the subject is in present tense and concise.\n"
+        f"* Avoid using markdown, HTML, or other syntax markers.\n"
+        f"</constraints>"
     )
     model_obj = llm.get_model(model or get_default_model())
     if model_obj.needs_key:
@@ -69,13 +76,13 @@ def generate_commit_message(diff, commit_style=None, model=None, max_tokens=100,
     response = model_obj.prompt(
         prompt,
         system=(
-            "You are an professional developper with more than 20 years of "
-            "experience. You're expert at writing Git commit messages from "
+            "You are a professional developer with more than 20 years of "
+            "experience. You're an expert at writing Git commit messages from "
             "code diffs. Focus on highlighting the added value of changes "
             "(meta-analysis, what could have happened without this change?), "
             "followed by bullet points detailing key changes (avoid "
-            "paraphrasing). Use specified commit Git style, while forbidding "
-            "other syntax markers or tags (ex: markdown, html, etc.)"
+            "paraphrasing). Use the specified commit Git style, while forbidding "
+            "other syntax markers or tags (e.g., markdown, HTML, etc.)"
         ),
         max_tokens=max_tokens,
         temperature=temperature
@@ -102,7 +109,6 @@ def confirm_commit(message, auto_yes=False):
         elif ans in ("no", "n"):
             return False
         click.echo("Please enter 'yes' or 'no'.")
-
 
 def clean_message(message):
     message = message.text().strip()
