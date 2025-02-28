@@ -64,7 +64,7 @@ def generate_commit_message(diff, commit_style=None, model=None, max_tokens=300,
         f"<diff>\n{diff}\n</diff>\n"
         f"<request>\nGenerate a Git commit title and commit message based on the above diff, following the specified commit style.\n</request>\n"
         f"<constraints>\n"
-        f"* Use the {commit_style.capitalize()} Commit Messages format.\n"
+        f"{ '* Use the {commit_style.capitalize()} Commit Messages format.\n' if commit_style else '' }"
         f"* Ensure the commit message is concise and follows professional standards.\n"
         f"* Ensure the subject is in present tense and concise.\n"
         f"* Avoid using markdown, HTML, or other syntax markers.\n"
