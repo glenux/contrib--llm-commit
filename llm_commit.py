@@ -35,7 +35,7 @@ def get_staged_diff(truncation_limit=4000, no_truncation=False):
         diff = diff[:truncation_limit] + "\n[Truncated]"
     return diff
 
-def generate_commit_message(diff, commit_style=None, model=None, max_tokens=300, temperature=0.8):
+def generate_commit_message(diff, commit_style=None, model=None, max_tokens=300, temperature=0.8, hint=None):
     import llm
     from llm.cli import get_default_model
     from llm import get_key
@@ -62,7 +62,14 @@ def generate_commit_message(diff, commit_style=None, model=None, max_tokens=300,
     prompt = (
         f"<commit-style>\n{style_description}\n</commit-style>\n"
         f"<diff>\n{diff}\n</diff>\n"
-        f"<request>\nGenerate a Git commit title and commit message based on the above diff, following the specified commit style.\n</request>\n"
+    )
+    
+    if hint:
+        prompt += f"<hint>\n{hint}\n</hint>\n"
+        
+    prompt += (
+        f"<request>\nGenerate a Git commit title and commit message based on the above diff"
+        f"{', incorporating the provided hint' if hint else ''}, following the specified commit style.\n</request>\n"
         f"<constraints>\n"
         f"* Use the {commit_style.capitalize()} Commit Messages format.\n"
         f"* Ensure the commit message is concise and follows professional standards.\n"
@@ -132,7 +139,8 @@ def register_commands(cli):
     @click.option("--no-truncation", is_flag=True, help="Disable diff truncation. Can cause issues with large diffs")
     @click.option("--semantic", is_flag=True, help="Enforce Semantic Commit Messages format")
     @click.option("--conventional", is_flag=True, help="Enforce Conventional Commits format")
-    def commit_cmd(yes, model, max_tokens, temperature, truncation_limit, no_truncation, semantic, conventional):
+    @click.option("--hint", help="Hint message to guide the commit message generation")
+    def commit_cmd(yes, model, max_tokens, temperature, truncation_limit, no_truncation, semantic, conventional, hint):
         if semantic and conventional:
             logging.error("Cannot use both --semantic and --conventional simultaneously.")
             sys.exit(1)
@@ -147,7 +155,7 @@ def register_commands(cli):
             logging.error("Not a Git repository.")
             sys.exit(1)
         diff = get_staged_diff(truncation_limit=truncation_limit, no_truncation=no_truncation)
-        message = generate_commit_message(diff, commit_style, model=model, max_tokens=max_tokens, temperature=temperature)
+        message = generate_commit_message(diff, commit_style, model=model, max_tokens=max_tokens, temperature=temperature, hint=hint)
         if confirm_commit(message, auto_yes=yes):
             commit_changes(message)
         else:
