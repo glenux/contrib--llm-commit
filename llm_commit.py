@@ -35,7 +35,7 @@ def get_staged_diff(truncation_limit=4000, no_truncation=False):
         diff = diff[:truncation_limit] + "\n[Truncated]"
     return diff
 
-def generate_commit_message(diff, commit_style=None, model=None, max_tokens=100, temperature=0.7):
+def generate_commit_message(diff, commit_style=None, model=None, max_tokens=300, temperature=0.8):
     import llm
     from llm.cli import get_default_model
     from llm import get_key
