@@ -63,18 +63,22 @@ def generate_commit_message(diff, commit_style=None, model=None, max_tokens=300,
         f"<commit-style>\n{style_description}\n</commit-style>\n"
         f"<diff>\n{diff}\n</diff>\n"
     )
-    
+
     if hint:
         prompt += f"<hint>\n{hint}\n</hint>\n"
-        
+    
     prompt += (
-        f"<request>\nGenerate a Git commit title and commit message based on the above diff"
-        f"{', incorporating the provided hint' if hint else ''}, following the specified commit style.\n</request>\n"
+        f"<request>\n"
+        f"Generate a Git commit title and commit message based on the above"
+        f"diff, following the specified commit style.\n"
+        f"{'Make sure to draw inspiration or incorporate rephased elements from the provided hint.' if hint else ''}"
+        f"</request>\n"
         f"<constraints>\n"
-        f"* Use the {commit_style.capitalize()} Commit Messages format.\n"
-        f"* Ensure the commit message is concise and follows professional standards.\n"
+        f"* Carefully follow the {commit_style.capitalize()} Commit Messages format.\n"
         f"* Ensure the subject is in present tense and concise.\n"
+        f"* Ensure the commit message is concise and follows professional standards (optional short intro, then bullet points explaining details).\n"
         f"* Avoid using markdown, HTML, or other syntax markers.\n"
+        f"* Avoid marketing bullshit terms. Avoid logorrhea. Neutral tone.\n"
         f"</constraints>"
     )
     model_obj = llm.get_model(model or get_default_model())
