@@ -4,7 +4,7 @@ import os
 import logging
 import subprocess
 from pathlib import Path
-import llm 
+import llm
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -35,22 +35,48 @@ def get_staged_diff(truncation_limit=4000, no_truncation=False):
         diff = diff[:truncation_limit] + "\n[Truncated]"
     return diff
 
-def generate_commit_message(diff, model=None, max_tokens=100, temperature=0.7):
+def generate_commit_message(diff, commit_style, model=None, max_tokens=100, temperature=0.7):
     import llm
     from llm.cli import get_default_model
     from llm import get_key
 
+    if commit_style == "semantic":
+        style_description = (
+            "Generate a Git commit message following the Semantic Commit "
+            "Messages format: <type>[optional scope in parentheses]: <subject>.\n"
+            "Ensure the subject is in present tense and concise."
+        )
+    elif commit_style == "conventional":
+        style_description = (
+            "Generate a Git commit message following the Conventional Commits "
+            "specification: <type>[optional scope in parentheses]: <description>.\n"
+            "Include optional BREAKING CHANGE if applicable."
+        )
+    else:
+        style_description = (
+            "Generate a concise and professional Git commit message based on "
+            "the following diff. The commit message should include a one-line "
+            "summary at the top, followed by bullet points for the key "
+            "changes. Keep it short and include relevant details."
+        )
+
     prompt = (
-        "Generate a concise and professional Git commit message based on the following diff. "
-        "The commit message should include a one-line summary at the top, followed by bullet points "
-        "for the key changes. Keep it short and include relevant details:\n\n" + diff
+        f"{style_description}\n\nDiff:\n{diff}"
     )
     model_obj = llm.get_model(model or get_default_model())
     if model_obj.needs_key:
         model_obj.key = get_key("", model_obj.needs_key, model_obj.key_env_var)
     response = model_obj.prompt(
         prompt,
-        system="You are an expert assistant specialized in creating concise, professional Git commit messages from code diffs. Provide a clear one-line summary followed by bullet points detailing key changes, using standard Git commit conventions.",
+        system=(
+            "You are an professional developper with more than 20 years of "
+            "experience. You're expert at writing Git commit messages from "
+            "code diffs. Focus on highlighting the added value of changes "
+            "(meta-analysis, what could have happened without this change?), "
+            "followed by bullet points detailing key changes (avoid "
+            "paraphrasing). Use specified commit Git style, while forbidding "
+            "other syntax markers or tags (ex: markdown, html, etc.)"
+        ),
         max_tokens=max_tokens,
         temperature=temperature
     )
@@ -77,6 +103,7 @@ def confirm_commit(message, auto_yes=False):
             return False
         click.echo("Please enter 'yes' or 'no'.")
 
+
 def clean_message(message):
     message = message.text().strip()
     # Remove triple backticks at the beginning and end, if present
@@ -97,12 +124,24 @@ def register_commands(cli):
     @click.option("--temperature", type=float, default=0.3, help="Temperature")
     @click.option("--truncation-limit", type=int, default=4000, help="Character limit for diff truncation")
     @click.option("--no-truncation", is_flag=True, help="Disable diff truncation. Can cause issues with large diffs")
-    def commit_cmd(yes, model, max_tokens, temperature, truncation_limit, no_truncation):
+    @click.option("--semantic", is_flag=True, help="Enforce Semantic Commit Messages format")
+    @click.option("--conventional", is_flag=True, help="Enforce Conventional Commits format")
+    def commit_cmd(yes, model, max_tokens, temperature, truncation_limit, no_truncation, semantic, conventional):
+        if semantic and conventional:
+            logging.error("Cannot use both --semantic and --conventional simultaneously.")
+            sys.exit(1)
+        if semantic:
+            commit_style = "semantic"
+        elif conventional:
+            commit_style = "conventional"
+        else:
+            commit_style = "default"
+
         if not is_git_repo():
             logging.error("Not a Git repository.")
             sys.exit(1)
         diff = get_staged_diff(truncation_limit=truncation_limit, no_truncation=no_truncation)
-        message = generate_commit_message(diff, model=model, max_tokens=max_tokens, temperature=temperature)
+        message = generate_commit_message(diff, commit_style, model=model, max_tokens=max_tokens, temperature=temperature)
         if confirm_commit(message, auto_yes=yes):
             commit_changes(message)
         else:
