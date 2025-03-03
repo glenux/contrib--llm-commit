@@ -26,7 +26,7 @@ def is_git_repo():
         return False
 
 def get_staged_diff(truncation_limit=4000, no_truncation=False):
-    diff = run_git(["git", "diff", "--cached"])
+    diff = run_git(["git", "diff", "--cached", "--histogram"])
     if not diff:
         logging.error("No staged changes. Use 'git add'.")
         sys.exit(1)
