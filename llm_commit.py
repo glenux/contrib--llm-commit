@@ -153,7 +153,7 @@ def build_prompt(style_description, diff, commit_style, hint):
         diff,
         "</diff>",
         "<request>",
-        "Generate a Git commit title and commit message based on the above <diff/>",
+        "Generate a Git commit title and commit message based on the above <diff/>"
         + (", and using information from the provided <hint/>" if hint else "")
         + ".",
         "</request>",
