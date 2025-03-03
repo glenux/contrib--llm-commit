@@ -35,41 +35,129 @@ def get_staged_diff(truncation_limit=4000, no_truncation=False):
         diff = diff[:truncation_limit] + "\n[Truncated]"
     return diff
 
-def generate_commit_message(diff, commit_style=None, model=None, max_tokens=300, temperature=0.8):
+
+def get_style_description(commit_style):
+    """
+    Return the style description string based on the commit style.
+
+    If the requested style is not found, return a default description.
+    
+    :param commit_style: Name of the commit style to retrieve (e.g. "semantic" or "conventional").
+    :return: A string containing the style description.
+    """
+    style_descriptions = {
+        "semantic": (
+            "<description>"
+            "The commit message should include a one-line summary at the top "
+            "(with change type and optional scope), then an optional description of "
+            "why the change was made, followed by points for the key changes.\n"
+            "</description>\n"
+            "<message-format style=\"semantic\">\n"
+            "[type][optional scope]: [one-line summary]\n"
+            "\n"
+            "[short description of why this change was made]\n"
+            "\n"
+            "* [key change 1 and how it was made]\n"
+            "* [key change 2 and how it was made]\n"
+            "* [...]\n"
+            "\n"
+            "</message-format>\n"
+            "<examples>\n"
+            "</examples>\n"
+        ),
+        "conventional": (
+            "<description>"
+            "The commit message should include a one-line summary at the top "
+            "(with change type, optional scope, and optional mark), then an "
+            "optional description of why the change was made, followed by "
+            "points for the key changes.\n"
+            "</description>\n"
+            "<message-format style=\"conventional\">"
+            "[type][optional scope][optional mark]: [one-line summary]\n"
+            "\n"
+            "[short description of why this change was made]\n"
+            "\n"
+            "* [key change 1 and how it was made]\n"
+            "* [key change 2 and how it was made]\n"
+            "* [...]\n"
+            "\n"
+            "[optional BREAKING CHANGE if applicable]\n"
+            "</message-format>\n"
+            "<examples>\n"
+            "</examples>\n"
+        ),
+    }
+
+    # Default style description if style not found
+    default_description = (
+        "<description>"
+        "The commit message should include a one-line summary at the top "
+        "then an optional description of why the change was made, followed by "
+        "points for the key changes.\n"
+        "</description>\n"
+        "<message-format style=\"default\">"
+        "[short description of why this change was made]\n"
+        "\n"
+        "* [key change 1 and how it was made]\n"
+        "* [key change 2 and how it was made]\n"
+        "* [...]\n"
+        "\n"
+        "</message-format>\n"
+    )
+
+    return style_descriptions.get(commit_style, default_description)
+
+
+def build_prompt(style_description, diff, commit_style):
+    """
+    Build the prompt string based on the style description, diff, and constraints.
+    
+    :param style_description: The description of the commit message style.
+    :param diff: The code diff to be included in the prompt.
+    :param commit_style: Optional commit style name.
+    :return: A formatted string containing the entire prompt.
+    """
+    constraints = [
+        "* Ensure the commit message is concise and follows professional standards.",
+        "* Ensure the subject is in present tense and concise.",
+        "* Include the relevant details from the diff in items of the commit message.",
+        "* Avoid using markdown, HTML, or other syntax markers."
+    ]
+
+    if commit_style:
+        constraints.insert(
+            0,
+            "* Carefully follow the <commit-style/> Commit Messages format."
+        )
+
+    constraints_str = "\n".join(constraints)
+
+    prompt = [
+        "<commit-style>",
+        f"{style_description}",
+        "</commit-style>",
+        "<diff>",
+        "$ git diff --staged --histogram",
+        f"{diff}",
+        "</diff>",
+        "<request>",
+        "Generate a Git commit title and commit message based on the above <diff/>.",
+        "</request>",
+        "<constraints>",
+        f"{constraints_str}",
+        "</constraints>"
+    ]
+    
+    return "\n".join(prompt)
+
+def generate_commit_message(diff, commit_style=None, model=None, max_tokens=400, temperature=0.8):
     import llm
     from llm.cli import get_default_model
     from llm import get_key
 
-    if commit_style == "semantic":
-        style_description = (
-            "Generate a Git commit message following the Semantic Commit "
-            "Messages format: <type>[optional scope in parentheses]: <subject>.\n"
-        )
-    elif commit_style == "conventional":
-        style_description = (
-            "Generate a Git commit message following the Conventional Commits "
-            "specification: <type>[optional scope in parentheses]: <description>.\n"
-            "Include optional BREAKING CHANGE if applicable."
-        )
-    else:
-        style_description = (
-            "Generate a concise and professional Git commit message based on "
-            "the following diff. The commit message should include a one-line "
-            "summary at the top, followed by bullet points for the key "
-            "changes. Keep it short and include relevant details."
-        )
+    style_description = get_style_description(commit_style)
+    prompt = build_prompt(style_description, diff, commit_style)
 
-    prompt = (
-        f"<commit-style>\n{style_description}\n</commit-style>\n"
-        f"<diff>\n{diff}\n</diff>\n"
-        f"<request>\nGenerate a Git commit title and commit message based on the above diff, following the specified commit style.\n</request>\n"
-        f"<constraints>\n"
-        f"{ '* Use the {commit_style.capitalize()} Commit Messages format.\n' if commit_style else '' }"
-        f"* Ensure the commit message is concise and follows professional standards.\n"
-        f"* Ensure the subject is in present tense and concise.\n"
-        f"* Avoid using markdown, HTML, or other syntax markers.\n"
-        f"</constraints>"
-    )
     model_obj = llm.get_model(model or get_default_model())
     if model_obj.needs_key:
         model_obj.key = get_key("", model_obj.needs_key, model_obj.key_env_var)
