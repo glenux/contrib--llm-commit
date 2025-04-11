@@ -185,7 +185,9 @@ def generate_commit_message(diff, commit_style=None, model=None, max_tokens=400,
             "(meta-analysis, what could have happened without this change?), "
             "followed by bullet points detailing key changes (avoid "
             "paraphrasing). Use the specified commit Git style, while forbidding "
-            "other syntax markers or tags (e.g., markdown, HTML, etc.)"
+            "other syntax markers or tags (e.g., markdown, HTML, etc.). "
+            "The audience is a group of experienced developper, please adapt "
+            "your tone/style accordingly."
         ),
         max_tokens=max_tokens,
         temperature=temperature
