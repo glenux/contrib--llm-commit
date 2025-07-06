@@ -243,6 +243,7 @@ def format_commit_message(msg):
     else:
         return subject
 
+
 @llm.hookimpl
 def register_commands(cli):
     import llm
@@ -251,14 +252,23 @@ def register_commands(cli):
 
     @cli.command(name="commit")
     @click.option("-y", "--yes", is_flag=True, help="Commit without prompting")
-    @click.option("--model", help="LLM model to use")
-    @click.option("--max-tokens", type=int, default=100, help="Max tokens")
-    @click.option("--temperature", type=float, default=0.3, help="Temperature")
-    @click.option("--truncation-limit", type=int, default=4000, help="Character limit for diff truncation")
-    @click.option("--no-truncation", is_flag=True, help="Disable diff truncation. Can cause issues with large diffs")
+    @click.option(
+        "--model",
+        envvar='LLM_COMMIT_MODEL',
+        help="LLM model to use (default: LLM_COMMIT_MODEL if set, otherwise same as llm)"
+    )
+    @click.option("--max-tokens", type=int, default=100, envvar="LLM_COMMIT_MAX_TOKENS",
+                  help="Max tokens (default: LLM_COMMIT_MAX_TOKENS if set, otherwise 100)")
+    @click.option("--temperature", type=float, default=0.3, envvar="LLM_COMMIT_TEMPERATURE",
+                  help="Temperature (default: LLM_COMMIT_TEMPERATURE if set, otherwise 0.3)")
+    @click.option("--truncation-limit", type=int, default=4000, envvar="LLM_COMMIT_TRUNCATION_LIMIT",
+                  help="Character limit for diff truncation (default: LLM_COMMIT_TRUNCATION_LIMIT if set, otherwise 4000)")
+    @click.option("--no-truncation", is_flag=True, default=False, envvar="LLM_COMMIT_NO_TRUNCATION", 
+                  help="Disable diff truncation. Can cause issues with large diffs. (default: LLM_COMMIT_NO_TRUNCATION if set, otherwise False)")
     @click.option("--semantic", is_flag=True, help="Enforce Semantic Commit Messages format")
     @click.option("--conventional", is_flag=True, help="Enforce Conventional Commits format")
-    @click.option("--hint", help="Hint message to guide the commit message generation")
+    @click.option("--hint", envvar="LLM_COMMIT_HINT", 
+                  help="Hint message to guide the commit message generation (default: LLM_COMMIT_HINT if set, otherwise None)")
     def commit_cmd(yes, model, max_tokens, temperature, truncation_limit, no_truncation, semantic, conventional, hint):
         env_style = os.getenv('LLM_COMMIT_STYLE')
 

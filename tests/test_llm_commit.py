@@ -252,6 +252,21 @@ def test_commit_cmd_env_style(monkeypatch):
     assert "Commit message with style semantic" in result.output
 
 def test_commit_cmd_env_style_overridden(monkeypatch):
+    def test_commit_cmd_defaults_truncation_limit_from_env(monkeypatch):
+        runner = CliRunner()
+        monkeypatch.setenv("LLM_COMMIT_TRUNCATION_LIMIT", "3000")
+        monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+        # For testing, simulate get_staged_diff to include the truncation limit value:
+        monkeypatch.setattr(llm_commit, "get_staged_diff", lambda *args, **kwargs: f"diff truncated at {kwargs.get('truncation_limit')}")
+        monkeypatch.setattr(llm_commit, "generate_commit_message", lambda diff, **kwargs: f"Diff: {diff}")
+        monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+        monkeypatch.setattr("builtins.input", lambda _: "yes")
+        
+        cli = Group()
+        llm_commit.register_commands(cli)
+        result = runner.invoke(cli, ["commit"])
+        assert result.exit_code == 0
+        assert "diff truncated at 3000" in result.output
     """
     Test that command-line flags (--semantic or --conventional) override the
     LLM_COMMIT_STYLE environment variable.
@@ -352,3 +367,113 @@ def test_format_commit_message_wrapping():
     # Check wrapping for each body line
     for line in lines[1:]:
         assert len(line) <= 72, f"Line in the body is too long: {line}"
+
+def test_commit_cmd_defaults_model_from_env(monkeypatch):
+    """
+    Verify that the model taken from the LLM_COMMIT_MODEL environment
+    variable is propagated to generate_commit_message when no explicit
+    --model flag is supplied on the CLI.
+    """
+    runner = CliRunner()
+    monkeypatch.setenv("LLM_COMMIT_MODEL", "env-model")
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    monkeypatch.setattr(llm_commit, "get_staged_diff", lambda *args, **kwargs: "diff text")
+
+    def mock_generate_commit_message(diff, *args, **kwargs):
+        return f"Model: {kwargs.get('model')}"
+
+    monkeypatch.setattr(llm_commit, "generate_commit_message", mock_generate_commit_message)
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda *_: "yes")
+
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit"])
+    assert result.exit_code == 0
+    assert "Model: env-model" in result.output
+
+def test_commit_cmd_defaults_temperature_from_env(monkeypatch):
+    """
+    Verify that the temperature taken from the LLM_COMMIT_TEMPERATURE environment
+    variable is propagated to generate_commit_message when no explicit --temperature flag
+    is supplied on the CLI.
+    """
+    runner = CliRunner()
+    monkeypatch.setenv("LLM_COMMIT_TEMPERATURE", "0.95")
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    monkeypatch.setattr(llm_commit, "get_staged_diff", lambda *args, **kwargs: "diff text")
+
+    def mock_generate_commit_message(diff, *args, **kwargs):
+        return f"Temperature: {kwargs.get('temperature')}"
+    
+    monkeypatch.setattr(llm_commit, "generate_commit_message", mock_generate_commit_message)
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda *_: "yes")
+
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit"])
+    assert result.exit_code == 0
+    assert "Temperature: 0.95" in result.output
+    """
+    Verify that the max_tokens taken from the LLM_COMMIT_MAX_TOKENS environment
+    variable is propagated to generate_commit_message when no explicit
+    --max-tokens flag is supplied on the CLI.
+    """
+    runner = CliRunner()
+    monkeypatch.setenv("LLM_COMMIT_MAX_TOKENS", "150")
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    monkeypatch.setattr(llm_commit, "get_staged_diff", lambda *args, **kwargs: "diff text")
+
+    def mock_generate_commit_message(diff, *args, **kwargs):
+        return f"Max tokens: {kwargs.get('max_tokens')}"
+    
+    monkeypatch.setattr(llm_commit, "generate_commit_message", mock_generate_commit_message)
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda *_: "yes")
+
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit"])
+    assert result.exit_code == 0
+    assert "Max tokens: 150" in result.output
+
+def test_commit_cmd_defaults_truncation_limit_from_env(monkeypatch):
+    """
+    Verify that the truncation limit taken from the LLM_COMMIT_TRUNCATION_LIMIT environment
+    variable is propagated to generate_commit_message when no explicit --truncation-limit flag
+    is supplied on the CLI.
+    """
+    runner = CliRunner()
+    monkeypatch.setenv("LLM_COMMIT_TRUNCATION_LIMIT", "3000")
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    monkeypatch.setattr(llm_commit, "get_staged_diff", 
+        lambda *args, **kwargs: f"diff truncated at {kwargs.get('truncation_limit')}")
+    def mock_generate_commit_message(diff, *args, **kwargs):
+        return f"Diff: {diff}"
+    monkeypatch.setattr(llm_commit, "generate_commit_message", mock_generate_commit_message)
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda *_: "yes")
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit"])
+    assert result.exit_code == 0
+    assert "diff truncated at 3000" in result.output
+
+def test_commit_cmd_defaults_hint_from_env(monkeypatch):
+    """
+    Verify that the hint taken from the LLM_COMMIT_HINT environment
+    variable is propagated to generate_commit_message when no explicit
+    --hint flag is supplied on the CLI.
+    """
+    runner = CliRunner()
+    monkeypatch.setenv("LLM_COMMIT_HINT", "ma valeur")
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    monkeypatch.setattr(llm_commit, "get_staged_diff", lambda *args, **kwargs: "diff text")
+    def mock_generate_commit_message(diff, *args, **kwargs):
+        return f"Hint: {kwargs.get('hint')}"
+    monkeypatch.setattr(llm_commit, "generate_commit_message", mock_generate_commit_message)
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda *_: "yes")
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit"])
+    assert result.exit_code == 0
+    assert "Hint: ma valeur" in result.output
+
+
