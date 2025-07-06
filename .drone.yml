@@ -1,7 +1,7 @@
 ---
 kind: pipeline
 type: docker
-name: default
+name: test
 
 trigger:
   event:
@@ -47,36 +47,32 @@ volumes:
   - name: pip_cache
     temp: {}
 
-# ---
-# kind: pipeline
-# type: docker
-# name: deploy
-#
-# # only run deploy after the test pipeline completes successfully
-# depends_on:
-#   - test
-#
-# trigger:
-#   event:
-#     - release
-#   action:
-#     - created
-#
-# steps:
-#   - name: install-build-tools
-#     image: python:3.11
-#     commands:
-#       - pip install setuptools wheel twine build
-#
-#   - name: build-and-publish
-#     image: python:3.11
-#     environment:
-#       # __token__ is the literal twine username for PyPI API tokens
-#       TWINE_USERNAME: "__token__"
-#       # pull your actual token from Drone’s secrets store
-#       TWINE_PASSWORD:
-#         from_secret: PYPI_TOKEN
-#     commands:
-#       - python -m build
-#       - twine upload dist/*
-#
+---
+kind: pipeline
+type: docker
+name: deploy
+
+# only run deploy after the test pipeline completes successfully
+depends_on:
+  - test
+
+trigger:
+  event:
+    - release
+  action:
+    - created
+
+steps:
+  - name: build-and-publish
+    image: python:3.11
+    environment:
+      # __token__ is the literal twine username for PyPI API tokens
+      TWINE_USERNAME: "__token__"
+      # pull your actual token from Drone’s secrets store
+      TWINE_PASSWORD:
+        from_secret: PYPI_TOKEN
+    commands:
+      - pip install setuptools wheel twine build
+      - python -m build
+      - twine upload dist/*
+
