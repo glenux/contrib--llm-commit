@@ -456,3 +456,24 @@ def test_commit_cmd_defaults_truncation_limit_from_env(monkeypatch):
     assert result.exit_code == 0
     assert "diff truncated at 3000" in result.output
 
+def test_commit_cmd_defaults_hint_from_env(monkeypatch):
+    """
+    Verify that the hint taken from the LLM_COMMIT_HINT environment
+    variable is propagated to generate_commit_message when no explicit
+    --hint flag is supplied on the CLI.
+    """
+    runner = CliRunner()
+    monkeypatch.setenv("LLM_COMMIT_HINT", "ma valeur")
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    monkeypatch.setattr(llm_commit, "get_staged_diff", lambda *args, **kwargs: "diff text")
+    def mock_generate_commit_message(diff, *args, **kwargs):
+        return f"Hint: {kwargs.get('hint')}"
+    monkeypatch.setattr(llm_commit, "generate_commit_message", mock_generate_commit_message)
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda *_: "yes")
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit"])
+    assert result.exit_code == 0
+    assert "Hint: ma valeur" in result.output
+
+
