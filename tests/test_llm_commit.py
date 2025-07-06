@@ -267,6 +267,7 @@ def test_commit_cmd_env_style_overridden(monkeypatch):
         result = runner.invoke(cli, ["commit"])
         assert result.exit_code == 0
         assert "diff truncated at 3000" in result.output
+    """
     Test that command-line flags (--semantic or --conventional) override the
     LLM_COMMIT_STYLE environment variable.
     """
