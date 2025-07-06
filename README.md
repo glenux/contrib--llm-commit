@@ -1,3 +1,9 @@
+
+> :information_source: This project is primarily hosted on our self-managed
+> server, with mirrored versions on CodeBerg and GitHub. For the most recent
+> updates and full project details, please visit our main repository:
+> <https://code.apps.glenux.net/glenux/llm-commit-gen>.
+
 # llm-commit-gen
 
 [LLM](https://llm.datasette.io/) plugin for generating Git commit messages using an LLM.
