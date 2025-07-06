@@ -8,12 +8,29 @@
 
 [LLM](https://llm.datasette.io/) plugin for generating Git commit messages using an LLM.
 
+**Note**: This project is a fork of the original [GNtousakis/llm-commit](https://github.com/GNtousakis/llm-commit) repository, which appears to be unmaintained. This fork integrates all pending pull requests from the original project while adding new fixes and features.
+
+## Prerequisites & Dependencies
+
+- [LLM](https://llm.datasette.io/) must be installed (this plugin runs within LLM).
+- Python 3.7+ is recommended.
+
 ## Installation
 
 Install this plugin in the same environment as LLM.
 
 ```bash
 llm install llm-commit-gen
+```
+
+For ease of use, it is also recommended to integrate llm-commit as a git alias.
+To do this, modify the `~/.gitconfig` file and add a new line at the end of the
+`[alias]` section:
+
+```ini
+[alias]
+    # ...
+    llmcommit = !llm commit --semantic --model 4o --max-tokens 1000
 ```
 
 ## Usage
@@ -48,15 +65,29 @@ llm commit-gen --truncation-limit 2000  # Truncate diffs longer than 2000 charac
 llm commit-gen --no-truncation         # Never truncate diffs (use with caution on large changes)
 ```
 
-You can also set defaults for options:
+## Configuration
 
-```
-# Set commit style via environment variable
+To avoid repeating parameters on the command line, you can set defaults
+settings throught environment variables:
+
+| Environment variable          | Description                                                                     |
+| ---                           | ---                                                                             |
+| `LLM_COMMIT_MODEL`            | LLM model to use. <br/>Default: same as LLM                                     |
+| `LLM_COMMIT_MAX_TOKENS`       | Max tokens. <br/>Default: 100                                                   |
+| `LLM_COMMIT_TEMPERATURE`      | Temperature. <br/>Default: 0.3                                                  |
+| `LLM_COMMIT_TRUNCATION_LIMIT` | Character limit for diff truncation. <br/>Default: 4000                         |
+| `LLM_COMMIT_NO_TRUNCATION`    | Disable diff truncation. Can cause issues with large diffs. <br/>Default: False |
+| `LLM_COMMIT_STYLE`            | Enforce commit format (e.g., conventional, semantic). <br/>Default: none.       |
+| `LLM_COMMIT_HINT`             | Hint message to guide the commit message generation. <br/>Default: none.        |
+
+Example:
+
+```bash
 export LLM_COMMIT_STYLE=conventional
 llm commit-gen
 ```
 
-## Development
+## Development (Building from Source)
 
 To set up this plugin locally, first check out the code. Then create a new virtual environment:
 
@@ -77,3 +108,14 @@ To run the tests:
 ```bash
 python -m pytest
 ```
+
+## Contributors
+
+- Original author (before the fork): Grigoris Ntousakis (GNtousakis)  
+- Current maintainer: Glenn Rolland (glenux)
+
+## License
+
+This plugin is licensed under the terms of the MIT license.  
+
+<!-- See the SPDX header in the repository for more details. -->
