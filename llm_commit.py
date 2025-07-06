@@ -260,7 +260,8 @@ def register_commands(cli):
                   help="Max tokens (default: LLM_COMMIT_MAX_TOKENS if set, otherwise 100)")
     @click.option("--temperature", type=float, default=0.3, envvar="LLM_COMMIT_TEMPERATURE",
                   help="Temperature (default: LLM_COMMIT_TEMPERATURE if set, otherwise 0.3)")
-    @click.option("--truncation-limit", type=int, default=4000, help="Character limit for diff truncation")
+    @click.option("--truncation-limit", type=int, default=4000, envvar="LLM_COMMIT_TRUNCATION_LIMIT",
+                  help="Character limit for diff truncation (default: LLM_COMMIT_TRUNCATION_LIMIT if set, otherwise 4000)")
     @click.option("--no-truncation", is_flag=True, help="Disable diff truncation. Can cause issues with large diffs")
     @click.option("--semantic", is_flag=True, help="Enforce Semantic Commit Messages format")
     @click.option("--conventional", is_flag=True, help="Enforce Conventional Commits format")

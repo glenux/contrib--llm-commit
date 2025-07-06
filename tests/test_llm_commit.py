@@ -252,7 +252,21 @@ def test_commit_cmd_env_style(monkeypatch):
     assert "Commit message with style semantic" in result.output
 
 def test_commit_cmd_env_style_overridden(monkeypatch):
-    """
+    def test_commit_cmd_defaults_truncation_limit_from_env(monkeypatch):
+        runner = CliRunner()
+        monkeypatch.setenv("LLM_COMMIT_TRUNCATION_LIMIT", "3000")
+        monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+        # For testing, simulate get_staged_diff to include the truncation limit value:
+        monkeypatch.setattr(llm_commit, "get_staged_diff", lambda *args, **kwargs: f"diff truncated at {kwargs.get('truncation_limit')}")
+        monkeypatch.setattr(llm_commit, "generate_commit_message", lambda diff, **kwargs: f"Diff: {diff}")
+        monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+        monkeypatch.setattr("builtins.input", lambda _: "yes")
+        
+        cli = Group()
+        llm_commit.register_commands(cli)
+        result = runner.invoke(cli, ["commit"])
+        assert result.exit_code == 0
+        assert "diff truncated at 3000" in result.output
     Test that command-line flags (--semantic or --conventional) override the
     LLM_COMMIT_STYLE environment variable.
     """
