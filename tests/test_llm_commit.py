@@ -205,7 +205,7 @@ def test_commit_cmd_full_flow_yes(monkeypatch):
     monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
     monkeypatch.setattr("builtins.input", lambda _: "yes")
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit", "--model", "test-model",
+    result = runner.invoke(cli, ["commit-gen", "--model", "test-model",
                                  "--max-tokens", "50", "--temperature", "0.5"])
     assert result.exit_code == 0
     assert "Commit message:" in result.output
@@ -221,7 +221,7 @@ def test_commit_cmd_auto_yes(monkeypatch):
                         **kwargs: "Test message")
     monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit", "-y"])
+    result = runner.invoke(cli, ["commit-gen", "-y"])
     assert result.exit_code == 0
     assert "Commit message:" in result.output
     assert "Test message" in result.output
@@ -238,7 +238,7 @@ def test_commit_cmd_no(monkeypatch, caplog):
     monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
     monkeypatch.setattr("builtins.input", lambda _: "no")
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"])
+    result = runner.invoke(cli, ["commit-gen"])
     assert result.exit_code == 0
     assert "Commit aborted" in caplog.text
 
@@ -248,7 +248,7 @@ def test_commit_cmd_not_git_repo(monkeypatch, caplog):
     runner = CliRunner()
     monkeypatch.setattr(llm_commit, "is_git_repo", lambda: False)
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"])
+    result = runner.invoke(cli, ["commit-gen"])
     assert result.exit_code == 1
     assert "Not a Git repository" in caplog.text
 
@@ -292,7 +292,7 @@ def test_commit_cmd_env_style(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _: "yes")
 
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"],
+    result = runner.invoke(cli, ["commit-gen"],
                            env={'LLM_COMMIT_STYLE': 'semantic'})
 
     assert result.exit_code == 0
@@ -315,7 +315,7 @@ def test_commit_cmd_env_style_overridden(monkeypatch):
 
         cli = Group()
         llm_commit.register_commands(cli)
-        result = runner.invoke(cli, ["commit"])
+        result = runner.invoke(cli, ["commit-gen"])
         assert result.exit_code == 0
         assert "diff truncated at 3000" in result.output
     """
@@ -340,7 +340,7 @@ def test_commit_cmd_env_style_overridden(monkeypatch):
 
     cli = get_cli_group()
 
-    result = runner.invoke(cli, ["commit", "--conventional"])
+    result = runner.invoke(cli, ["commit-gen", "--conventional"])
 
     assert result.exit_code == 0
     assert "Commit message with style conventional" in result.output
@@ -368,7 +368,7 @@ def test_commit_cmd_default_style(monkeypatch):
     monkeypatch.delenv('LLM_COMMIT_STYLE', raising=False)
 
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"])
+    result = runner.invoke(cli, ["commit-gen"])
 
     assert result.exit_code == 0
     assert "Commit message with style default" in result.output
@@ -388,7 +388,7 @@ def test_commit_cmd_custom_truncation(monkeypatch):
     monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
     monkeypatch.setattr("builtins.input", lambda _: "yes")
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit", "--truncation-limit", "2000"])
+    result = runner.invoke(cli, ["commit-gen", "--truncation-limit", "2000"])
     assert result.exit_code == 0
     assert "diff text truncated at 2000" in result.output
 
@@ -407,7 +407,7 @@ def test_commit_cmd_no_truncation(monkeypatch):
     monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
     monkeypatch.setattr("builtins.input", lambda _: "yes")
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit", "--no-truncation"])
+    result = runner.invoke(cli, ["commit-gen", "--no-truncation"])
     assert result.exit_code == 0
     assert "diff text not truncated" in result.output
 
@@ -457,7 +457,7 @@ def test_commit_cmd_defaults_model_from_env(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda *_: "yes")
 
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"])
+    result = runner.invoke(cli, ["commit-gen"])
     assert result.exit_code == 0
     assert "Model: env-model" in result.output
 
@@ -483,7 +483,7 @@ def test_commit_cmd_defaults_temperature_from_env(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda *_: "yes")
 
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"])
+    result = runner.invoke(cli, ["commit-gen"])
     assert result.exit_code == 0
     assert "Temperature: 0.95" in result.output
     """
@@ -506,7 +506,7 @@ def test_commit_cmd_defaults_temperature_from_env(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda *_: "yes")
 
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"])
+    result = runner.invoke(cli, ["commit-gen"])
     assert result.exit_code == 0
     assert "Max tokens: 150" in result.output
 
@@ -532,7 +532,7 @@ def test_commit_cmd_defaults_truncation_limit_from_env(monkeypatch):
     monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
     monkeypatch.setattr("builtins.input", lambda *_: "yes")
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"])
+    result = runner.invoke(cli, ["commit-gen"])
     assert result.exit_code == 0
     assert "diff truncated at 3000" in result.output
 
@@ -557,7 +557,7 @@ def test_commit_cmd_defaults_hint_from_env(monkeypatch):
     monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
     monkeypatch.setattr("builtins.input", lambda *_: "yes")
     cli = get_cli_group()
-    result = runner.invoke(cli, ["commit"])
+    result = runner.invoke(cli, ["commit-gen"])
     assert result.exit_code == 0
     assert "Hint: ma valeur" in result.output
 

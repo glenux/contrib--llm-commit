@@ -30,7 +30,7 @@ To do this, modify the `~/.gitconfig` file and add a new line at the end of the
 ```ini
 [alias]
     # ...
-    llmcommit = !llm commit --semantic --model 4o --max-tokens 1000
+    llmcommitgen = !llm commit-gen --semantic --model 4o --max-tokens 1000
 ```
 
 ## Usage

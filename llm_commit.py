@@ -250,7 +250,7 @@ def register_commands(cli):
     from llm.cli import get_default_model
     from llm import get_key
 
-    @cli.command(name="commit")
+    @cli.command(name="commit-gen")
     @click.option("-y", "--yes", is_flag=True, help="Commit without prompting")
     @click.option(
         "--model",
