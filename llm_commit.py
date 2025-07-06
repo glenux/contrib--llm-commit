@@ -251,7 +251,11 @@ def register_commands(cli):
 
     @cli.command(name="commit")
     @click.option("-y", "--yes", is_flag=True, help="Commit without prompting")
-    @click.option("--model", help="LLM model to use")
+    @click.option(
+        "--model",
+        envvar='LLM_COMMIT_MODEL',
+        help="LLM model to use (default: LLM_COMMIT_MODEL if set, otherwise same as llm)"
+    )
     @click.option("--max-tokens", type=int, default=100, help="Max tokens")
     @click.option("--temperature", type=float, default=0.3, help="Temperature")
     @click.option("--truncation-limit", type=int, default=4000, help="Character limit for diff truncation")

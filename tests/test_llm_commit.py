@@ -352,3 +352,27 @@ def test_format_commit_message_wrapping():
     # Check wrapping for each body line
     for line in lines[1:]:
         assert len(line) <= 72, f"Line in the body is too long: {line}"
+
+def test_commit_cmd_defaults_model_from_env(monkeypatch):
+    """
+    Verify that the model taken from the LLM_COMMIT_MODEL environment
+    variable is propagated to generate_commit_message when no explicit
+    --model flag is supplied on the CLI.
+    """
+    runner = CliRunner()
+    monkeypatch.setenv("LLM_COMMIT_MODEL", "env-model")
+    monkeypatch.setattr(llm_commit, "is_git_repo", lambda: True)
+    monkeypatch.setattr(llm_commit, "get_staged_diff", lambda *args, **kwargs: "diff text")
+
+    def mock_generate_commit_message(diff, *args, **kwargs):
+        return f"Model: {kwargs.get('model')}"
+
+    monkeypatch.setattr(llm_commit, "generate_commit_message", mock_generate_commit_message)
+    monkeypatch.setattr(llm_commit, "commit_changes", lambda msg: None)
+    monkeypatch.setattr("builtins.input", lambda *_: "yes")
+
+    cli = get_cli_group()
+    result = runner.invoke(cli, ["commit"])
+    assert result.exit_code == 0
+    assert "Model: env-model" in result.output
+
