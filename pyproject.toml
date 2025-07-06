@@ -7,7 +7,7 @@ name = "llm-commit-gen"
 version = "1.0.3"
 description = "A plugin for llm that generates commit messages"
 authors = [
-    { name = "Grigoris Ntousakis", email = "greco1996@gmail.com" }
+    { name = "Grigoris Ntousakis", email = "greco1996@gmail.com" },
     { name = "Glenn Rolland", email = "glenux@glenux.net" }
 ]
 dependencies = [
